@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field, unused_import, use_build_context_synchronously, deprecated_member_use, library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,7 +19,7 @@ void main() async {
   // Initialize notifications
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
-  final initSettings = InitializationSettings(
+  const initSettings = InitializationSettings(
     android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     iOS: DarwinInitializationSettings(),
   );
@@ -52,7 +54,7 @@ class RobotApp extends StatelessWidget {
           accentColor: Colors.orange,
           brightness: Brightness.light,
         ),
-        textTheme: TextTheme(
+        textTheme: const TextTheme(
           displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -63,11 +65,12 @@ class RobotApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textStyle:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -107,7 +110,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _tabController = TabController(length: 5, vsync: this);
 
     // Check sensors periodically
-    _sensorCheckTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+    _sensorCheckTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       // Get connection manager
       final connectionManager =
           Provider.of<RobotConnectionManager>(context, listen: false);
@@ -132,8 +135,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   Future<void> _runProgram() async {
     if (_generatedCode.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No code to run! Create a program first.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('No code to run! Create a program first.')));
       return;
     }
 
@@ -142,7 +145,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
     if (!connectionManager.isConnected) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connect to your robot first!')));
+          const SnackBar(content: Text('Connect to your robot first!')));
       _tabController.animateTo(1); // Navigate to Connect tab
       return;
     }
@@ -170,7 +173,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           await connectionManager.sendCommand(cmd);
 
           // Add a small delay between commands
-          await Future.delayed(Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 100));
         } else if (waitMatch != null) {
           String waitTime = waitMatch.group(1) ?? '0';
           int milliseconds = (double.parse(waitTime) * 1000).round();
@@ -217,7 +220,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Continue'),
+            child: const Text('Continue'),
           ),
         ],
       ),
@@ -228,12 +231,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('RoboCode Kids'),
+        title: const Text('RoboCode Kids'),
         actions: [
           Consumer<RobotConnectionManager>(
             builder: (context, manager, child) {
               return Container(
-                padding: EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
                     Icon(
@@ -242,10 +245,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           : Icons.bluetooth_disabled,
                       color: manager.isConnected ? Colors.green : Colors.red,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
                       manager.isConnected ? manager.deviceName : 'Disconnected',
-                      style: TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                     ),
                   ],
                 ),
@@ -256,8 +259,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          tabs: [
+          labelStyle:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          tabs: const [
             Tab(text: 'Home', icon: Icon(Icons.home)),
             Tab(text: 'Connect', icon: Icon(Icons.bluetooth)),
             Tab(text: 'Code', icon: Icon(Icons.code)),
@@ -269,15 +273,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: TabBarView(
         controller: _tabController,
         children: [
-          HomeScreen(),
-          ConnectScreen(),
+          const HomeScreen(),
+          const ConnectScreen(),
           CodeScreen(onCodeGenerated: _onCodeGenerated),
           RunScreen(
             generatedCode: _generatedCode,
             isRunning: _isRunning,
             onRun: _runProgram,
           ),
-          SensorScreen(),
+          const SensorScreen(),
         ],
       ),
     );
@@ -292,7 +296,7 @@ class HomeScreen extends StatelessWidget {
     return Consumer<LevelManager>(
       builder: (context, levelManager, child) {
         return Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -300,12 +304,12 @@ class HomeScreen extends StatelessWidget {
                 'Welcome to RoboCode Kids!',
                 style: Theme.of(context).textTheme.displayMedium,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Program your robot using blocks!',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Current level progress
               Row(
@@ -314,7 +318,7 @@ class HomeScreen extends StatelessWidget {
                     'Level ${levelManager.currentLevel}:',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     levelManager.getLevelName(),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -323,11 +327,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Level description
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -335,34 +339,34 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Mission:',
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       levelManager.getLevelDescription(),
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Level progress bar
-              Text(
+              const Text(
                 'Your Progress:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
                   value: levelManager.currentLevel / levelManager.maxLevels,
                   minHeight: 24,
                   backgroundColor: Colors.grey[300],
-                  valueColor: AlwaysStoppedAnimation<Color>(
+                  valueColor: const AlwaysStoppedAnimation<Color>(
                     Colors.orange,
                   ),
                 ),
@@ -372,15 +376,15 @@ class HomeScreen extends StatelessWidget {
                 child: Text(
                   'Level ${levelManager.currentLevel}/${levelManager.maxLevels}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Level selection
               Expanded(
                 child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     childAspectRatio: 1.0,
                     crossAxisSpacing: 10,
@@ -408,7 +412,7 @@ class HomeScreen extends StatelessWidget {
                                       ? Colors.orange
                                       : Colors.grey,
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
                               color: Colors.black26,
                               blurRadius: 4,
@@ -428,10 +432,10 @@ class HomeScreen extends StatelessWidget {
                               size: 32,
                               color: Colors.white,
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Text(
                               'Level $level',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -454,23 +458,25 @@ class HomeScreen extends StatelessWidget {
 
 // Connect Screen to manage Bluetooth and WiFi connections
 class ConnectScreen extends StatefulWidget {
+  const ConnectScreen({super.key});
+
   @override
   _ConnectScreenState createState() => _ConnectScreenState();
 }
 
 class _ConnectScreenState extends State<ConnectScreen> {
-  bool _isScanning = false;
-  String _ssid = '';
-  String _password = '';
-  String _ipAddress = '192.168.4.1';
-  String _port = '80';
+  final bool _isScanning = false;
+  final String _ssid = '';
+  final String _password = '';
+  final String _ipAddress = '192.168.4.1';
+  final String _port = '80';
 
   @override
   Widget build(BuildContext context) {
     return Consumer<RobotConnectionManager>(
       builder: (context, manager, child) {
         return Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -478,10 +484,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 'Connect to Your Robot',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               if (Platform.isWindows)
                 Container(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.orange[100],
                     borderRadius: BorderRadius.circular(8),
@@ -489,8 +495,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.orange),
-                      SizedBox(height: 8),
+                      const Icon(Icons.info_outline, color: Colors.orange),
+                      const SizedBox(height: 8),
                       Text(
                         'Bluetooth and WebView features are not supported on Windows platform.',
                         style: TextStyle(
@@ -498,7 +504,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                           color: Colors.orange[900],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
                         'Please use the Android version of the app for full functionality.',
                         style: TextStyle(color: Colors.orange[900]),
@@ -511,7 +517,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 Column(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: manager.isConnected
                             ? Colors.green[100]
@@ -527,7 +533,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                             color:
                                 manager.isConnected ? Colors.green : Colors.red,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             manager.isConnected
                                 ? 'Connected to ${manager.deviceName}'
@@ -539,14 +545,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                   : Colors.red[900],
                             ),
                           ),
-                          Spacer(),
+                          const Spacer(),
                           if (manager.isConnected)
                             ElevatedButton(
                               onPressed: () => manager.disconnect(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                               ),
-                              child: Text('Disconnect'),
+                              child: const Text('Disconnect'),
                             ),
                         ],
                       ),
@@ -574,16 +580,16 @@ class CodeScreen extends StatelessWidget {
         return Column(
           children: [
             Container(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               color: Colors.blue[50],
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue),
-                  SizedBox(width: 8),
+                  const Icon(Icons.info_outline, color: Colors.blue),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Level ${levelManager.currentLevel}: ${levelManager.getLevelName()}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -626,12 +632,12 @@ class RunScreen extends StatelessWidget {
             'Program Commands',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Generated code display
           Expanded(
             child: Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
@@ -642,7 +648,7 @@ class RunScreen extends StatelessWidget {
                   generatedCode.isEmpty
                       ? 'Your code will appear here...'
                       : generatedCode,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'Courier New',
                     fontSize: 16,
                   ),
@@ -650,7 +656,7 @@ class RunScreen extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Run button
           SizedBox(
@@ -662,7 +668,7 @@ class RunScreen extends StatelessWidget {
                   size: 28),
               label: Text(
                 isRunning ? 'Running...' : 'Run Program',
-                style: TextStyle(fontSize: 20),
+                style: const TextStyle(fontSize: 20),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -671,9 +677,9 @@ class RunScreen extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           if (isRunning)
-            Center(
+            const Center(
               child: Column(
                 children: [
                   CircularProgressIndicator(
@@ -706,17 +712,17 @@ class SensorScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.sensors_off, size: 80, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
+                const Icon(Icons.sensors_off, size: 80, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
                   'Connect to your robot to see sensor data',
                   style: TextStyle(fontSize: 18),
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () {},
-                  icon: Icon(Icons.bluetooth),
-                  label: Text('Connect'),
+                  icon: const Icon(Icons.bluetooth),
+                  label: const Text('Connect'),
                 ),
               ],
             ),

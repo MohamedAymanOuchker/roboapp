@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field, unused_import, deprecated_member_use
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -27,7 +29,7 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
     if (!Platform.isAndroid && !Platform.isIOS) {
       return Center(
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.orange[100],
             borderRadius: BorderRadius.circular(8),
@@ -35,8 +37,9 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded, size: 48, color: Colors.orange),
-              SizedBox(height: 16),
+              const Icon(Icons.warning_amber_rounded,
+                  size: 48, color: Colors.orange),
+              const SizedBox(height: 16),
               Text(
                 'Blockly Editor is not supported on this platform.',
                 style: TextStyle(
@@ -45,7 +48,7 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
                   color: Colors.orange[900],
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Please use the Android or iOS version of the app for the full coding experience.',
                 textAlign: TextAlign.center,
@@ -260,19 +263,19 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
 
               // Define JavaScript generators for custom blocks
               Blockly.JavaScript['move_forward'] = function(block) {
-                return 'moveForward();\\n';
+                return 'sendCommand("F1000");\\n';
               };
 
               Blockly.JavaScript['move_backward'] = function(block) {
-                return 'moveBackward();\\n';
+                return 'sendCommand("B1000");\\n';
               };
 
               Blockly.JavaScript['turn_left'] = function(block) {
-                return 'turnLeft();\\n';
+                return 'sendCommand("L90");\\n';
               };
 
               Blockly.JavaScript['turn_right'] = function(block) {
-                return 'turnRight();\\n';
+                return 'sendCommand("R90");\\n';
               };
 
               Blockly.JavaScript['wait'] = function(block) {
@@ -297,15 +300,15 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
               };
 
               Blockly.JavaScript['gripper_open'] = function(block) {
-                return 'openGripper();\\n';
+                return 'sendCommand("O");\\n';
               };
 
               Blockly.JavaScript['gripper_close'] = function(block) {
-                return 'closeGripper();\\n';
+                return 'sendCommand("C");\\n';
               };
 
               Blockly.JavaScript['auto_mode'] = function(block) {
-                return 'startAutoMode();\\n';
+                return 'sendCommand("A");\\n';
               };
 
               // Initialize Blockly workspace with optimized settings
@@ -341,9 +344,9 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
               // Add available blocks
               ${widget.availableBlocks.map((block) => '''
                 try {
-                  workspace.newBlock('${block}');
+                  workspace.newBlock('$block');
                 } catch (e) {
-                  console.error('Error adding block ${block}:', e);
+                  console.error('Error adding block $block:', e);
                 }
               ''').join('\n')}
               

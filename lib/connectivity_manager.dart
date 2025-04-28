@@ -1,5 +1,8 @@
+// ignore_for_file: unused_field, deprecated_member_use, use_build_context_synchronously
+
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:wifi_iot/wifi_iot.dart';
@@ -68,7 +71,7 @@ class RobotConnectionManager extends ChangeNotifier {
   // Scan for BLE devices
   Stream<List<BluetoothDevice>> scanForDevices() {
     // Start scanning
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 4));
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
 
     // Return results stream
     return FlutterBluePlus.scanResults.map((results) {
@@ -124,7 +127,9 @@ class RobotConnectionManager extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Error connecting to Bluetooth device: $e');
+      if (kDebugMode) {
+        print('Error connecting to Bluetooth device: $e');
+      }
       return false;
     }
   }
@@ -135,7 +140,9 @@ class RobotConnectionManager extends ChangeNotifier {
       try {
         await _bleDevice!.disconnect();
       } catch (e) {
-        print('Error disconnecting: $e');
+        if (kDebugMode) {
+          print('Error disconnecting: $e');
+        }
       }
     }
 
@@ -180,7 +187,9 @@ class RobotConnectionManager extends ChangeNotifier {
 
       return connected;
     } catch (e) {
-      print('Error connecting to WiFi: $e');
+      if (kDebugMode) {
+        print('Error connecting to WiFi: $e');
+      }
       return false;
     }
   }
@@ -197,7 +206,9 @@ class RobotConnectionManager extends ChangeNotifier {
     try {
       await WiFiForIoTPlugin.disconnect();
     } catch (e) {
-      print('Error disconnecting WiFi: $e');
+      if (kDebugMode) {
+        print('Error disconnecting WiFi: $e');
+      }
     }
 
     if (_connectionType == ConnectionType.wifi) {
@@ -237,7 +248,9 @@ class RobotConnectionManager extends ChangeNotifier {
         return true;
       }
     } catch (e) {
-      print('Error sending command: $e');
+      if (kDebugMode) {
+        print('Error sending command: $e');
+      }
     }
 
     return false;
@@ -251,7 +264,9 @@ class RobotConnectionManager extends ChangeNotifier {
       Map<String, dynamic> sensorData = jsonDecode(dataString);
       _sensorDataController.add(sensorData);
     } catch (e) {
-      print('Error parsing sensor data: $e');
+      if (kDebugMode) {
+        print('Error parsing sensor data: $e');
+      }
     }
   }
 
@@ -273,13 +288,13 @@ class RobotConnectionManager extends ChangeNotifier {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.battery_alert, color: Colors.red),
-                SizedBox(width: 10),
+                const Icon(Icons.battery_alert, color: Colors.red),
+                const SizedBox(width: 10),
                 Text('Low battery: $batteryLevel%!'),
               ],
             ),
             backgroundColor: Colors.red[700],
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -287,6 +302,7 @@ class RobotConnectionManager extends ChangeNotifier {
   }
 
   // Clean up resources
+  @override
   void dispose() {
     _sensorDataController.close();
     disconnect();
