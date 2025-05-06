@@ -85,6 +85,9 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
               <title>Blockly</title>
               <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+              <script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
+              <script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+              <script src="https://unpkg.com/blockly/msg/en.js"></script>
               <style>
                 html, body {
                   height: 100%;
@@ -104,35 +107,34 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
             </head>
             <body>
               <div id="blocklyDiv"></div>
-              <xml id="toolbox" style="display: none">
-                <category name="Movement" colour="210">
-                  <block type="move_forward"></block>
-                  <block type="move_backward"></block>
-                  <block type="turn_left"></block>
-                  <block type="turn_right"></block>
-                </category>
-                <category name="Control" colour="120">
-                  <block type="wait"></block>
-                  <block type="repeat"></block>
-                  <block type="if_then"></block>
-                </category>
-                <category name="Sensors" colour="160">
-                  <block type="distance_sensor"></block>
-                </category>
-                <category name="Gripper" colour="230">
-                  <block type="gripper_open"></block>
-                  <block type="gripper_close"></block>
-                </category>
-                <category name="Auto" colour="290">
-                  <block type="auto_mode"></block>
-                </category>
-              </xml>
+              <script>
+                try {
+                  var workspace = Blockly.inject('blocklyDiv', {
+                    toolbox: document.getElementById('toolbox'),
+                    scrollbars: true,
+                    trashcan: true,
+                    zoom: {
+                      controls: true,
+                      wheel: true,
+                      startScale: 1.0,
+                      maxScale: 3,
+                      minScale: 0.3,
+                      scaleSpeed: 1.2
+                    }
+                  });
+                  
+                  // Notify Flutter that Blockly is ready
+                  window.flutter_inappwebview.callHandler('blocklyReady');
+                } catch (error) {
+                  console.error('Error initializing Blockly:', error);
+                  window.flutter_inappwebview.callHandler('blocklyError', error.toString());
+                }
+              </script>
             </body>
             </html>
           ''',
           mimeType: 'text/html',
           encoding: 'utf-8',
-          baseUrl: WebUri('about:blank'),
         );
       },
       onLoadStop: (InAppWebViewController controller, Uri? url) async {
@@ -412,10 +414,11 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
       },
       onLoadError: (InAppWebViewController controller, Uri? url, int code,
           String message) {
-        debugPrint('WebView error: $message');
+        print('WebView load error: $message');
+        // Notify the user about the error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('WebView error: $message'),
+            content: Text('Error loading Blockly: $message'),
             backgroundColor: Colors.red,
           ),
         );

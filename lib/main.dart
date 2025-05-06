@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 
@@ -43,7 +44,7 @@ class RobotApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RoboCode Kids',
+      title: 'RoboCode',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -231,7 +232,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RoboCode Kids'),
+        title: const Text('RoboCode'),
         actions: [
           Consumer<RobotConnectionManager>(
             builder: (context, manager, child) {
@@ -301,7 +302,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome to RoboCode Kids!',
+                'Welcome to RoboCode!',
                 style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 16),
@@ -465,11 +466,64 @@ class ConnectScreen extends StatefulWidget {
 }
 
 class _ConnectScreenState extends State<ConnectScreen> {
-  final bool _isScanning = false;
-  final String _ssid = '';
-  final String _password = '';
-  final String _ipAddress = '192.168.4.1';
-  final String _port = '80';
+  bool _isScanning = false;
+  List<BluetoothDevice> _devices = [];
+  String _ssid = '';
+  String _password = '';
+  String _ipAddress = '192.168.4.1';
+  String _port = '80';
+  String? _errorMessage;
+
+  void _startScanning(BuildContext context) async {
+    setState(() {
+      _isScanning = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final connectionManager =
+          Provider.of<RobotConnectionManager>(context, listen: false);
+      final deviceStream = await connectionManager.scanForDevices();
+
+      deviceStream.listen((devices) {
+        setState(() {
+          _devices = devices;
+        });
+      }, onDone: () {
+        setState(() {
+          _isScanning = false;
+        });
+      });
+    } catch (e) {
+      setState(() {
+        _isScanning = false;
+        _errorMessage = 'Error scanning for devices: $e';
+      });
+    }
+  }
+
+  Future<void> _connectToDevice(
+      BuildContext context, BluetoothDevice device) async {
+    setState(() {
+      _errorMessage = null;
+    });
+
+    try {
+      final connectionManager =
+          Provider.of<RobotConnectionManager>(context, listen: false);
+      final success = await connectionManager.connectBluetooth(device);
+
+      if (!success) {
+        setState(() {
+          _errorMessage = 'Failed to connect to device';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error connecting to device: $e';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -513,9 +567,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   ),
                 )
               else
-                // Original connection UI for Android
                 Column(
                   children: [
+                    // Connection status
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -557,6 +611,72 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Error message
+                    if (_errorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Scan button
+                    if (!manager.isConnected)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isScanning
+                              ? null
+                              : () => _startScanning(context),
+                          icon: Icon(_isScanning
+                              ? Icons.hourglass_full
+                              : Icons.search),
+                          label: Text(
+                              _isScanning ? 'Scanning...' : 'Scan for Devices'),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Device list
+                    if (!manager.isConnected && _devices.isNotEmpty)
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: _devices.length,
+                          itemBuilder: (context, index) {
+                            final device = _devices[index];
+                            return Card(
+                              child: ListTile(
+                                leading: const Icon(Icons.bluetooth),
+                                title: Text(device.name.isNotEmpty
+                                    ? device.name
+                                    : 'Unknown Device'),
+                                subtitle: Text(device.id.id),
+                                trailing: ElevatedButton(
+                                  onPressed: () =>
+                                      _connectToDevice(context, device),
+                                  child: const Text('Connect'),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
             ],
