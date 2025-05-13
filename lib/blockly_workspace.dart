@@ -31,14 +31,24 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
       return _buildUnsupportedPlatformWidget();
     }
 
-    return InAppWebView(
-      key: webViewKey,
-      initialSettings: _getWebViewSettings(),
-      onWebViewCreated: _handleWebViewCreated,
-      onLoadStop: _handleLoadStop,
-      onConsoleMessage: _handleConsoleMessage,
-      onLoadError: _handleLoadError,
-      onReceivedError: _handleReceivedError,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_controller != null) {
+          await _controller!.clearCache();
+          await _controller!.clearHistory();
+        }
+        return true;
+      },
+      child: InAppWebView(
+        key: webViewKey,
+        initialSettings: _getWebViewSettings(),
+        onWebViewCreated: _handleWebViewCreated,
+        onLoadStop: _handleLoadStop,
+        onConsoleMessage: _handleConsoleMessage,
+        onLoadError: _handleLoadError,
+        onReceivedError: _handleReceivedError,
+        gestureRecognizers: const {},
+      ),
     );
   }
 
@@ -88,6 +98,9 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
       disableVerticalScroll: true,
       supportZoom: false,
       useWideViewPort: false,
+      cacheEnabled: false,
+      clearCache: true,
+      hardwareAcceleration: true,
     );
   }
 
@@ -101,6 +114,7 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
       data: _getBlocklyHtml(),
       mimeType: 'text/html',
       encoding: 'utf-8',
+      historyUrl: null,
     );
   }
 
@@ -136,246 +150,280 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
       <body>
         <div id="blocklyDiv"></div>
         <script>
-          ${_getBlocklyJavaScript()}
+          // Initialize when the document is fully loaded
+          window.addEventListener('load', function() {
+            try {
+              // Clear any existing registrations
+              if (window.Blockly) {
+                // Clear existing block definitions
+                Object.keys(Blockly.Blocks).forEach(key => {
+                  if (key.startsWith('move_') || key === 'wait' || key === 'repeat' || 
+                      key === 'if_then' || key === 'distance_sensor' || key === 'auto_mode') {
+                    delete Blockly.Blocks[key];
+                  }
+                });
+
+                // Clear existing generators
+                if (Blockly.JavaScript) {
+                  Object.keys(Blockly.JavaScript).forEach(key => {
+                    if (key.startsWith('move_') || key === 'wait' || key === 'repeat' || 
+                        key === 'if_then' || key === 'distance_sensor' || key === 'auto_mode') {
+                      delete Blockly.JavaScript[key];
+                    }
+                  });
+                }
+
+                // Clear any existing extensions
+                if (Blockly.Extensions && Blockly.Extensions.ALL_) {
+                  Object.keys(Blockly.Extensions.ALL_).forEach(key => {
+                    if (key === 'contextMenu_variableDynamicSetterGetter') {
+                      delete Blockly.Extensions.ALL_[key];
+                    }
+                  });
+                }
+              }
+
+              // Define block definitions
+              const blockDefinitions = {
+                'move_forward': {
+                  init: function() {
+                    this.appendDummyInput().appendField("Move Forward");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(210);
+                  }
+                },
+                'move_backward': {
+                  init: function() {
+                    this.appendDummyInput().appendField("Move Backward");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(210);
+                  }
+                },
+                'turn_left': {
+                  init: function() {
+                    this.appendDummyInput().appendField("Turn Left");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(210);
+                  }
+                },
+                'turn_right': {
+                  init: function() {
+                    this.appendDummyInput().appendField("Turn Right");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(210);
+                  }
+                },
+                'wait': {
+                  init: function() {
+                    this.appendValueInput("DURATION")
+                        .setCheck("Number")
+                        .appendField("Wait");
+                    this.appendDummyInput().appendField("seconds");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                  }
+                },
+                'repeat': {
+                  init: function() {
+                    this.appendValueInput("TIMES")
+                        .setCheck("Number")
+                        .appendField("Repeat");
+                    this.appendDummyInput().appendField("times");
+                    this.appendStatementInput("DO").appendField("do");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                  }
+                },
+                'if_then': {
+                  init: function() {
+                    this.appendValueInput("CONDITION")
+                        .setCheck("Boolean")
+                        .appendField("if");
+                    this.appendStatementInput("DO").appendField("then");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(120);
+                  }
+                },
+                'distance_sensor': {
+                  init: function() {
+                    this.appendDummyInput().appendField("Distance Sensor");
+                    this.setOutput(true, "Number");
+                    this.setColour(160);
+                  }
+                },
+                'auto_mode': {
+                  init: function() {
+                    this.appendDummyInput().appendField("Auto Mode");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(290);
+                  }
+                }
+              };
+
+              // Register block definitions
+              Object.entries(blockDefinitions).forEach(([type, definition]) => {
+                Blockly.Blocks[type] = definition;
+              });
+
+              // Initialize JavaScript generator
+              if (!Blockly.JavaScript) {
+                Blockly.JavaScript = new Blockly.Generator('JavaScript');
+              }
+
+              Blockly.JavaScript.ORDER_ATOMIC = 0;
+              Blockly.JavaScript.ORDER_NONE = 99;
+
+              // Define JavaScript generators directly
+              Blockly.JavaScript['move_forward'] = function(block) {
+                return 'sendCommand("F1000");\\n';
+              };
+
+              Blockly.JavaScript['move_backward'] = function(block) {
+                return 'sendCommand("B1000");\\n';
+              };
+
+              Blockly.JavaScript['turn_left'] = function(block) {
+                return 'sendCommand("L90");\\n';
+              };
+
+              Blockly.JavaScript['turn_right'] = function(block) {
+                return 'sendCommand("R90");\\n';
+              };
+
+              Blockly.JavaScript['wait'] = function(block) {
+                var duration = Blockly.JavaScript.valueToCode(block, 'DURATION', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+                return 'wait(' + duration + ');\\n';
+              };
+
+              Blockly.JavaScript['repeat'] = function(block) {
+                var times = Blockly.JavaScript.valueToCode(block, 'TIMES', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+                var branch = Blockly.JavaScript.statementToCode(block, 'DO');
+                return 'for (let i = 0; i < ' + times + '; i++) {\\n' + branch + '}\\n';
+              };
+
+              Blockly.JavaScript['if_then'] = function(block) {
+                var condition = Blockly.JavaScript.valueToCode(block, 'CONDITION', Blockly.JavaScript.ORDER_ATOMIC) || 'false';
+                var branch = Blockly.JavaScript.statementToCode(block, 'DO');
+                return 'if (' + condition + ') {\\n' + branch + '}\\n';
+              };
+
+              Blockly.JavaScript['distance_sensor'] = function(block) {
+                return ['getDistance()', Blockly.JavaScript.ORDER_ATOMIC];
+              };
+
+              Blockly.JavaScript['auto_mode'] = function(block) {
+                return 'sendCommand("A");\\n';
+              };
+
+              // Create toolbox based on available blocks
+              const availableBlocks = ${widget.availableBlocks};
+              const toolbox = {
+                kind: 'categoryToolbox',
+                contents: [
+                  {
+                    kind: 'category',
+                    name: 'Movement',
+                    colour: 210,
+                    contents: availableBlocks.filter(block => 
+                      block.startsWith('move_') || block === 'turn_left' || block === 'turn_right'
+                    ).map(block => ({ kind: 'block', type: block }))
+                  },
+                  {
+                    kind: 'category',
+                    name: 'Control',
+                    colour: 120,
+                    contents: availableBlocks.filter(block => 
+                      block === 'wait' || block === 'repeat' || block === 'if_then'
+                    ).map(block => ({ kind: 'block', type: block }))
+                  },
+                  {
+                    kind: 'category',
+                    name: 'Sensors',
+                    colour: 160,
+                    contents: availableBlocks.filter(block => 
+                      block === 'distance_sensor'
+                    ).map(block => ({ kind: 'block', type: block }))
+                  },
+                  {
+                    kind: 'category',
+                    name: 'Modes',
+                    colour: 290,
+                    contents: availableBlocks.filter(block => 
+                      block === 'auto_mode'
+                    ).map(block => ({ kind: 'block', type: block }))
+                  }
+                ].filter(category => category.contents.length > 0)
+              };
+
+              // Initialize workspace
+              const workspace = Blockly.inject('blocklyDiv', {
+                toolbox: toolbox,
+                scrollbars: true,
+                trashcan: true,
+                zoom: {
+                  controls: true,
+                  wheel: true,
+                  startScale: 1.0,
+                  maxScale: 3,
+                  minScale: 0.3,
+                  scaleSpeed: 1.2
+                },
+                grid: {
+                  spacing: 20,
+                  length: 3,
+                  colour: '#ccc',
+                  snap: true
+                }
+              });
+
+              // Setup change listener with debouncing
+              let debounceTimer;
+              workspace.addChangeListener(function(event) {
+                if (event.type == Blockly.Events.BLOCK_CHANGE ||
+                    event.type == Blockly.Events.BLOCK_CREATE ||
+                    event.type == Blockly.Events.BLOCK_DELETE ||
+                    event.type == Blockly.Events.BLOCK_MOVE) {
+                  clearTimeout(debounceTimer);
+                  debounceTimer = setTimeout(function() {
+                    try {
+                      console.log('Generating code for block type:', event.blockId ? workspace.getBlockById(event.blockId).type : 'unknown');
+                      const code = Blockly.JavaScript.workspaceToCode(workspace);
+                      console.log('Generated code:', code);
+                      window.flutter_inappwebview.callHandler('onCodeGenerated', code);
+                    } catch (e) {
+                      console.error('Error generating code:', e);
+                      console.error('Stack trace:', e.stack);
+                      window.flutter_inappwebview.callHandler('onError', e.toString());
+                    }
+                  }, $_debounceDelay);
+                }
+              });
+
+              // Handle window resize
+              window.addEventListener('resize', function() {
+                if (workspace) {
+                  Blockly.svgResize(workspace);
+                }
+              });
+
+              // Notify Flutter that Blockly is ready
+              window.flutter_inappwebview.callHandler('blocklyReady');
+            } catch (error) {
+              console.error('Error initializing Blockly:', error);
+              window.flutter_inappwebview.callHandler('onError', error.toString());
+            }
+          });
         </script>
       </body>
       </html>
-    ''';
-  }
-
-  String _getBlocklyJavaScript() {
-    return '''
-      // Initialize when the document is fully loaded
-      window.addEventListener('load', function() {
-        try {
-          // Define block definitions
-          const blockDefinitions = {
-            'move_forward': {
-              init: function() {
-                this.appendDummyInput().appendField("Move Forward");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(210);
-              }
-            },
-            'move_backward': {
-              init: function() {
-                this.appendDummyInput().appendField("Move Backward");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(210);
-              }
-            },
-            'turn_left': {
-              init: function() {
-                this.appendDummyInput().appendField("Turn Left");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(210);
-              }
-            },
-            'turn_right': {
-              init: function() {
-                this.appendDummyInput().appendField("Turn Right");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(210);
-              }
-            },
-            'wait': {
-              init: function() {
-                this.appendValueInput("DURATION")
-                    .setCheck("Number")
-                    .appendField("Wait");
-                this.appendDummyInput().appendField("seconds");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(120);
-              }
-            },
-            'repeat': {
-              init: function() {
-                this.appendValueInput("TIMES")
-                    .setCheck("Number")
-                    .appendField("Repeat");
-                this.appendDummyInput().appendField("times");
-                this.appendStatementInput("DO").appendField("do");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(120);
-              }
-            },
-            'if_then': {
-              init: function() {
-                this.appendValueInput("CONDITION")
-                    .setCheck("Boolean")
-                    .appendField("if");
-                this.appendStatementInput("DO").appendField("then");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(120);
-              }
-            },
-            'distance_sensor': {
-              init: function() {
-                this.appendDummyInput().appendField("Distance Sensor");
-                this.setOutput(true, "Number");
-                this.setColour(160);
-              }
-            },
-            'auto_mode': {
-              init: function() {
-                this.appendDummyInput().appendField("Auto Mode");
-                this.setPreviousStatement(true, null);
-                this.setNextStatement(true, null);
-                this.setColour(290);
-              }
-            }
-          };
-
-          // Register block definitions
-          Object.entries(blockDefinitions).forEach(([type, definition]) => {
-            if (!Blockly.Blocks[type]) {
-              Blockly.Blocks[type] = definition;
-            }
-          });
-
-          // Initialize JavaScript generator
-          if (!Blockly.JavaScript) {
-            Blockly.JavaScript = new Blockly.Generator('JavaScript');
-          }
-
-          Blockly.JavaScript.ORDER_ATOMIC = 0;
-          Blockly.JavaScript.ORDER_NONE = 99;
-
-          // Define JavaScript generators
-          const generators = {
-            'move_forward': (block) => 'sendCommand("F1000");\\n',
-            'move_backward': (block) => 'sendCommand("B1000");\\n',
-            'turn_left': (block) => 'sendCommand("L90");\\n',
-            'turn_right': (block) => 'sendCommand("R90");\\n',
-            'wait': (block) => {
-              const duration = Blockly.JavaScript.valueToCode(block, 'DURATION', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-              return 'wait(' + duration + ');\\n';
-            },
-            'repeat': (block) => {
-              const times = Blockly.JavaScript.valueToCode(block, 'TIMES', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-              const branch = Blockly.JavaScript.statementToCode(block, 'DO');
-              return 'for (let i = 0; i < ' + times + '; i++) {\\n' + branch + '}\\n';
-            },
-            'if_then': (block) => {
-              const condition = Blockly.JavaScript.valueToCode(block, 'CONDITION', Blockly.JavaScript.ORDER_ATOMIC) || 'false';
-              const branch = Blockly.JavaScript.statementToCode(block, 'DO');
-              return 'if (' + condition + ') {\\n' + branch + '}\\n';
-            },
-            'distance_sensor': (block) => ['getDistance()', Blockly.JavaScript.ORDER_ATOMIC],
-            'auto_mode': (block) => 'sendCommand("A");\\n'
-          };
-
-          // Register generators
-          Object.entries(generators).forEach(([type, generator]) => {
-            Blockly.JavaScript[type] = generator;
-          });
-
-          // Create toolbox
-          const toolbox = {
-            kind: 'categoryToolbox',
-            contents: [
-              {
-                kind: 'category',
-                name: 'Movement',
-                colour: 210,
-                contents: [
-                  { kind: 'block', type: 'move_forward' },
-                  { kind: 'block', type: 'move_backward' },
-                  { kind: 'block', type: 'turn_left' },
-                  { kind: 'block', type: 'turn_right' }
-                ]
-              },
-              {
-                kind: 'category',
-                name: 'Control',
-                colour: 120,
-                contents: [
-                  { kind: 'block', type: 'wait' },
-                  { kind: 'block', type: 'repeat' },
-                  { kind: 'block', type: 'if_then' }
-                ]
-              },
-              {
-                kind: 'category',
-                name: 'Sensors',
-                colour: 160,
-                contents: [
-                  { kind: 'block', type: 'distance_sensor' }
-                ]
-              },
-              {
-                kind: 'category',
-                name: 'Modes',
-                colour: 290,
-                contents: [
-                  { kind: 'block', type: 'auto_mode' }
-                ]
-              }
-            ]
-          };
-
-          // Initialize workspace
-          const workspace = Blockly.inject('blocklyDiv', {
-            toolbox: toolbox,
-            scrollbars: true,
-            trashcan: true,
-            zoom: {
-              controls: true,
-              wheel: true,
-              startScale: 1.0,
-              maxScale: 3,
-              minScale: 0.3,
-              scaleSpeed: 1.2
-            },
-            grid: {
-              spacing: 20,
-              length: 3,
-              colour: '#ccc',
-              snap: true
-            }
-          });
-
-          // Setup change listener with debouncing
-          let debounceTimer;
-          workspace.addChangeListener(function(event) {
-            if (event.type == Blockly.Events.BLOCK_CHANGE ||
-                event.type == Blockly.Events.BLOCK_CREATE ||
-                event.type == Blockly.Events.BLOCK_DELETE ||
-                event.type == Blockly.Events.BLOCK_MOVE) {
-              clearTimeout(debounceTimer);
-              debounceTimer = setTimeout(function() {
-                try {
-                  const code = Blockly.JavaScript.workspaceToCode(workspace);
-                  window.flutter_inappwebview.callHandler('onCodeGenerated', code);
-                } catch (e) {
-                  console.error('Error generating code:', e);
-                  window.flutter_inappwebview.callHandler('onError', e.toString());
-                }
-              }, $_debounceDelay);
-            }
-          });
-
-          // Handle window resize
-          window.addEventListener('resize', function() {
-            if (workspace) {
-              Blockly.svgResize(workspace);
-            }
-          });
-
-          // Notify Flutter that Blockly is ready
-          window.flutter_inappwebview.callHandler('blocklyReady');
-        } catch (error) {
-          console.error('Error initializing Blockly:', error);
-          window.flutter_inappwebview.callHandler('onError', error.toString());
-        }
-      });
     ''';
   }
 
@@ -435,6 +483,10 @@ class _BlocklyWorkspaceState extends State<BlocklyWorkspace> {
 
   @override
   void dispose() {
+    if (_controller != null) {
+      _controller!.clearCache();
+      _controller!.clearHistory();
+    }
     _controller = null;
     super.dispose();
   }
