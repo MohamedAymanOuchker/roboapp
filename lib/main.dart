@@ -468,10 +468,10 @@ class ConnectScreen extends StatefulWidget {
 class _ConnectScreenState extends State<ConnectScreen> {
   bool _isScanning = false;
   List<BluetoothDevice> _devices = [];
-  String _ssid = '';
-  String _password = '';
-  String _ipAddress = '192.168.4.1';
-  String _port = '80';
+  final String _ssid = '';
+  final String _password = '';
+  final String _ipAddress = '192.168.4.1';
+  final String _port = '80';
   String? _errorMessage;
 
   void _startScanning(BuildContext context) async {
