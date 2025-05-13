@@ -45,13 +45,13 @@ class LevelManager extends ChangeNotifier {
       case 1:
         return 'Basic Movement';
       case 2:
-        return 'Path Planning';
+        return 'Sequences';
       case 3:
-        return 'Sensor Integration';
+        return 'Sensors';
       case 4:
-        return 'Gripper Control';
-      case 5:
         return 'Auto Mode';
+      case 5:
+        return 'Advanced Navigation';
       default:
         return 'Unknown Level';
     }
@@ -66,9 +66,9 @@ class LevelManager extends ChangeNotifier {
       case 3:
         return 'Use the ultrasonic sensor to detect obstacles and make decisions based on sensor readings.';
       case 4:
-        return 'Control the robot\'s gripper to pick up and move objects.';
-      case 5:
         return 'Activate auto mode for continuous navigation with obstacle avoidance.';
+      case 5:
+        return 'Combine all skills to create complex navigation programs.';
       default:
         return 'Description not available.';
     }
@@ -88,10 +88,6 @@ class LevelManager extends ChangeNotifier {
 
     if (currentLevel >= 3) {
       blocks.addAll(['distance_sensor', 'if_then']);
-    }
-
-    if (currentLevel >= 4) {
-      blocks.addAll(['gripper_open', 'gripper_close']);
     }
 
     if (currentLevel >= 5) {

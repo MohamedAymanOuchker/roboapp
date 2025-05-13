@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -69,24 +70,57 @@ class RobotConnectionManager extends ChangeNotifier {
   // ----- Bluetooth Functions -----
 
   // Scan for BLE devices
-  Stream<List<BluetoothDevice>> scanForDevices() {
-    // Start scanning
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+  Future<Stream<List<BluetoothDevice>>> scanForDevices() async {
+    try {
+      // Check if Bluetooth is available
+      if (!await FlutterBluePlus.isSupported) {
+        throw Exception('Bluetooth is not supported on this device');
+      }
 
-    // Return results stream
-    return FlutterBluePlus.scanResults.map((results) {
-      return results.map((result) => result.device).toList();
-    });
+      // Check if Bluetooth is on
+      if (!await FlutterBluePlus.isOn) {
+        throw Exception(
+            'Bluetooth is turned off. Please turn it on to scan for devices');
+      }
+
+      // Request permissions
+      if (Platform.isAndroid) {
+        await FlutterBluePlus.turnOn();
+      }
+
+      // Start scanning
+      FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 4),
+        androidScanMode: AndroidScanMode.lowLatency,
+      );
+
+      // Return results stream
+      return FlutterBluePlus.scanResults.map((results) {
+        return results.map((result) => result.device).toList();
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error starting scan: $e');
+      }
+      rethrow;
+    }
   }
 
   // Connect to Bluetooth device
   Future<bool> connectBluetooth(BluetoothDevice device) async {
     try {
       // Stop scanning if still active
-      FlutterBluePlus.stopScan();
+      await FlutterBluePlus.stopScan();
+
+      // Check if device is already connected
+      if (device.isConnected) {
+        return true;
+      }
 
       // Connect to the device
-      await device.connect();
+      await device.connect(
+        timeout: const Duration(seconds: 5),
+      );
 
       // Discover services
       List<BluetoothService> services = await device.discoverServices();
